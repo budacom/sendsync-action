@@ -11,10 +11,12 @@ RUN CGO_ENABLED=0 go build -o sendsync
 
 FROM alpine:latest
 
-RUN apk --no-cache add ca-certificates
+RUN apk --no-cache add ca-certificates git
 
 WORKDIR /root/
 
 COPY --from=build /go/src/github.com/budacom/sendsync/sendsync /usr/local/bin
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
 
-ENTRYPOINT [ "sendsync" ]
+ENTRYPOINT [ "/entrypoint.sh" ]

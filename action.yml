@@ -3,3 +3,6 @@ description: 'Syncronize Sendgrid Templates'
 runs:
   using: 'docker'
   image: 'Dockerfile'
+outputs:
+  templates:
+    description: "String of templates modified separated by a comma"

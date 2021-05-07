@@ -1,6 +1,7 @@
 #!/bin/sh -l
 
-echo "Hello $1"
+sendsync get template
 
-sendsync get templates
-# echo "::set-output name=time::$time"
+templates=$(git diff-files --name-only templates/ | cut -d '/' -f 2 | tr '\n' ',' | sed 's/,$//g')
+
+echo "::set-output name=templates::$templates"
