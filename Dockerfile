@@ -16,3 +16,5 @@ RUN apk --no-cache add ca-certificates
 WORKDIR /root/
 
 COPY --from=build /go/src/github.com/budacom/sendsync/sendsync /usr/local/bin
+
+ENTRYPOINT [ "sendsync" ]

@@ -1,15 +1,12 @@
 name: 'Sendgrid Sync'
 description: 'Syncronize Sendgrid Templates'
 inputs:
-  who-to-greet:  # id of input
-    description: 'Who to greet'
+  command:
+    description: 'Command to execute on sendsync'
     required: true
-    default: 'World'
-outputs:
-  time: # id of output
-    description: 'The time we greeted you'
+    default: '-h'
 runs:
   using: 'docker'
   image: 'Dockerfile'
   args:
-    - ${{ inputs.who-to-greet }}
+    - ${{ inputs.command }}
