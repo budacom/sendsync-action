@@ -1,12 +1,5 @@
 name: 'Sendgrid Sync'
 description: 'Syncronize Sendgrid Templates'
-inputs:
-  command:
-    description: 'Command to execute on sendsync'
-    required: true
-    default: '-h'
 runs:
   using: 'docker'
   image: 'Dockerfile'
-  args:
-    - ${{ inputs.command }}
