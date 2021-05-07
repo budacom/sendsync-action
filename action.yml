@@ -1,5 +1,10 @@
 name: 'Sendgrid Sync'
 description: 'Syncronize Sendgrid Templates'
+inputs:
+  dry-run:
+    required: false
+    description: "Only show affected files"
+    default: "false"
 runs:
   using: 'docker'
   image: 'Dockerfile'
