@@ -5,9 +5,15 @@ inputs:
     required: false
     description: "Only show affected files"
     default: "false"
+  mode:
+    required: true
+    description: "Could be 'sync' or 'apply'"
 runs:
   using: 'docker'
   image: 'Dockerfile'
+  args:
+    - ${{ inputs.dry-run }}
+    - ${{ inputs.mode }}
 outputs:
   templates:
     description: "String of templates modified separated by a comma"
