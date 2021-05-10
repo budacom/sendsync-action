@@ -40,7 +40,7 @@ if [ $MODE = "sync" ]; then
 elif [ $MODE = "apply" ]; then
     git pull origin master
     git diff --name-only ${GITHUB_SHA} HEAD~1 templates/
-    templates=$(git diff --name-only ${GITHUB_SHA} HEAD~1 templates/ | tpl_path_join)
+    templates=$(git diff --name-only -m ${GITHUB_SHA} HEAD~1 templates/ | tpl_path_join)
     for template in ${templates}; do
         if [ $DRY_RUN = "false" ]; then 
             sendsync apply templates/${template}/template.json
