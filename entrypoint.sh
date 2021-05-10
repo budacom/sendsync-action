@@ -38,7 +38,7 @@ if [ $MODE = "sync" ]; then
         fi
     done
 elif [ $MODE = "apply" ]; then
-    git pull origin master
+    git pull --unshallow
     git diff --name-only ${GITHUB_SHA} HEAD~1 templates/
     templates=$(git diff --name-only -m ${GITHUB_SHA} HEAD~1 templates/ | tpl_path_join)
     for template in ${templates}; do
