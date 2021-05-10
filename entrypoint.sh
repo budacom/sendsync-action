@@ -42,9 +42,9 @@ elif [ $MODE = "apply" ]; then
     git diff --name-only ${GITHUB_SHA} HEAD~1 templates/
     templates=$(git diff --name-only -m ${GITHUB_SHA} HEAD~1 templates/ | tpl_path_join)
     for template in ${templates}; do
-        if [ $DRY_RUN = "false" ]; then 
-            sendsync apply templates/${template}/template.json
-        else 
+        if [ $DRY_RUN = "false" ]; then
+            sendsync apply -f templates/${template}/template.json
+        else
             echo "DRY RUN: would have applied ${template}"
         fi
     done
