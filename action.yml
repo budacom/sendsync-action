@@ -7,13 +7,18 @@ inputs:
     default: "false"
   mode:
     required: true
-    description: "Could be 'sync' or 'apply'"
+    description: "The mode to run the action. Could be `sync` or `apply`"
+  committer-email:
+    required: false
+    description: "The email to use when creating the commits"
+  committer-name:
+    required: false
+    description: "The name to use when creating the commits"
 runs:
   using: 'docker'
   image: 'Dockerfile'
   args:
-    - ${{ inputs.dry-run }}
-    - ${{ inputs.mode }}
-outputs:
-  templates:
-    description: "String of templates modified separated by a comma"
+    - --dry-run ${{ inputs.dry-run }}
+    - --mode ${{ inputs.mode }}
+    - --committer-email ${{ inputs.committer-email }}
+    - --committer-name ${{ inputs.committer-name }}
