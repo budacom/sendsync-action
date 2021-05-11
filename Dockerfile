@@ -18,7 +18,7 @@ RUN chmod a+x gh_1.9.2_linux_amd64/bin/gh
 
 FROM alpine:latest
 
-RUN apk --no-cache add ca-certificates git
+RUN apk --no-cache add ca-certificates git bash
 
 WORKDIR /root/
 
