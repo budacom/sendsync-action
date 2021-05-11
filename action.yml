@@ -7,13 +7,10 @@ inputs:
     default: "false"
   mode:
     required: true
-    description: "Could be 'sync' or 'apply'"
+    description: "The mode to run the action. Could be `sync` or `apply`"
 runs:
   using: 'docker'
   image: 'Dockerfile'
   args:
-    - ${{ inputs.dry-run }}
-    - ${{ inputs.mode }}
-outputs:
-  templates:
-    description: "String of templates modified separated by a comma"
+    - --dry-run ${{ inputs.dry-run }}
+    - --mode ${{ inputs.mode }}

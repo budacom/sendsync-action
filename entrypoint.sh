@@ -60,7 +60,7 @@ parse_command_line() {
                     exit 1
                 fi
                 ;;
-            -d|--mode)
+            -m|--mode)
                 if [[ -n "${2:-}" ]]; then
                     mode="$2"
                     shift
@@ -70,8 +70,15 @@ parse_command_line() {
                     exit 1
                 fi
                 ;;
-            -u|--dry-run)
-                dry_run=true
+            -d|--dry-run)
+                if [[ -n "${2:-}" ]]; then
+                    dry_run="$2"
+                    shift
+                else
+                    echo "ERROR: '-d|--dry-run' cannot be empty." >&2
+                    show_help
+                    exit 1
+                fi
                 ;;
             *)
                 break
