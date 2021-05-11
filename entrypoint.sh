@@ -34,8 +34,8 @@ EOF
 main() {
     local mode=
     local dry_run=false
-    local committer_email
-    local committer_name
+    local committer_email=
+    local committer_name=
     local draft_pr=false
 
     parse_command_line $@
