@@ -24,6 +24,9 @@ Usage: $(basename "$0") <options>
     -h, --help               Display help
     -m, --mode               The mode in which to run the action (one of: sync, apply)
     -d, --dry-run            Run the action with dry-run
+    --committer-email        The email to use when creating the commits
+    --committer-name         The name to use when creating the commits
+    --draft-pr               Create the pull request as draft
 
 EOF
 }
@@ -31,6 +34,9 @@ EOF
 main() {
     local mode=
     local dry_run=false
+    local committer_email
+    local committer_name
+    local draft_pr=false
 
     parse_command_line "$@"
 
@@ -80,6 +86,26 @@ parse_command_line() {
                     exit 1
                 fi
                 ;;
+            --committer-email)
+                if [[ -n "${2:-}" ]]; then
+                    committer_email="$2"
+                    shift
+                else
+                    echo "ERROR: '--committer-email' cannot be empty." >&2
+                    show_help
+                    exit 1
+                fi
+                ;;
+            --committer-name)
+                if [[ -n "${2:-}" ]]; then
+                    committer_name="$2"
+                    shift
+                else
+                    echo "ERROR: '--committer-name' cannot be empty." >&2
+                    show_help
+                    exit 1
+                fi
+                ;;
             *)
                 break
                 ;;
@@ -98,6 +124,20 @@ parse_command_line() {
         echo "ERROR: '$mode mode is not supported." >&2
         show_help
         exit 1
+    fi
+
+    if [[ $mode = 'sync' ]]; then
+        if [[ -z "$committer_name" ]]; then
+            echo "ERROR: '--committer-name' is required on sync mode" >&2
+            show_help
+            exit 1
+        fi
+
+        if [[ -z "$committer_email" ]]; then
+            echo "ERROR: '--committer-email' is required on sync mode" >&2
+            show_help
+            exit 1
+        fi
     fi
 }
 
@@ -136,8 +176,8 @@ apply() {
 
 setup_git() {
     git pull --unshallow
-    git config --global user.email "devops@buda.com"
-    git config --global user.name "Buda CD"
+    git config --global user.email $committer_email
+    git config --global user.name $committer_name
     git fetch origin
     git merge origin/master
 }

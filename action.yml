@@ -8,9 +8,17 @@ inputs:
   mode:
     required: true
     description: "The mode to run the action. Could be `sync` or `apply`"
+  committer-email:
+    required: false
+    description: "The email to use when creating the commits"
+  committer-name:
+    required: false
+    description: "The name to use when creating the commits"
 runs:
   using: 'docker'
   image: 'Dockerfile'
   args:
     - --dry-run ${{ inputs.dry-run }}
     - --mode ${{ inputs.mode }}
+    - --committer-email ${{ inputs.committer-email }}
+    - --committer-name ${{ inputs.committer-name }}
