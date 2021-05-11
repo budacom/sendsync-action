@@ -145,7 +145,7 @@ sync() {
     setup_git
 
     echo "Running in syncronization mode"
-    # sendsync get template
+    sendsync get template
 
     templates=$(get_changed_templates_on_workdir templates)
 
