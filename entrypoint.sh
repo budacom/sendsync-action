@@ -38,7 +38,7 @@ main() {
     local committer_name
     local draft_pr=false
 
-    parse_command_line "$@"
+    parse_command_line $@
 
     if [[ $mode = "sync" ]]; then
         sync
