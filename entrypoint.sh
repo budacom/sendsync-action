@@ -200,7 +200,9 @@ create_pr_for_template() {
     local template_path=templates/$template
     local branch=$template
 
-    git branch $branch
+    if ! git branch -r | grep -q $template; then
+        git branch $branch
+    fi
     git checkout $branch
     git pull origin $branch
     git stash pop
