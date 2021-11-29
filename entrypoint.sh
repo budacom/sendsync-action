@@ -184,7 +184,7 @@ setup_git() {
 get_changed_templates_on_workdir() {
     local templates_path=$1
 
-    git status -s $templates_path | cut -d' ' -f3 | cut -d'/' -f 2 | sort | uniq
+    git status -s $templates_path | cut -d'/' -f 2 | sort | uniq
 }
 
 get_changed_templates_on_commit() {
