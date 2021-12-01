@@ -149,11 +149,19 @@ sync() {
     templates=$(get_changed_templates_on_workdir templates)
 
     for template in $templates; do
+        echo "Stashing $template..."
+        git add -A templates/$template
+        git stash push -m $template -- templates/$template
+    done
+
+    git stash list | while read line; do
+        stashed_template=$(git stash list | grep "stash@{0}" | cut -d' ' -f4)
+
         if [ $dry_run = "false" ]; then
-            git stash
-            create_pr_for_template $template
+            echo "Creating PR for $stashed_template..."
+            create_pr_for_template $stashed_template
         else
-            echo "DRY RUN: would have created PR for ${template}"
+            echo "DRY RUN: would have created PR for ${stashed_template}"
         fi
     done
 }
@@ -204,16 +212,16 @@ create_pr_for_template() {
         git branch $branch
     fi
     git checkout $branch
-    git pull origin $branch
+    git reset --hard master
+
     git stash pop
     git add $template_path
     git commit -m "(auto) Changes in $template"
-    git push origin $branch
+    git push -f origin $branch
 
     echo ${GITHUB_TOKEN} | gh auth login --with-token
     gh pr create -d --title "(auto) Publish template: $template." --body "Detected changes in template $template. Review this PR to approve."
 
-    git stash
     git checkout master
 }
 
