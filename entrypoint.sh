@@ -212,12 +212,11 @@ create_pr_for_template() {
         git branch $branch
     fi
     git checkout $branch
-    git reset --hard master
 
     git stash pop
     git add $template_path
     git commit -m "(auto) Changes in $template"
-    git push -f origin $branch
+    git push origin $branch
 
     echo ${GITHUB_TOKEN} | gh auth login --with-token
     gh pr create -d --title "(auto) Publish template: $template." --body "Detected changes in template $template. Review this PR to approve."
