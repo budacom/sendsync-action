@@ -182,6 +182,7 @@ apply() {
 }
 
 setup_git() {
+    git config --global --add safe.directory $GITHUB_WORKSPACE
     git pull --unshallow
     git config --global user.email $committer_email
     git config --global user.name $committer_name
