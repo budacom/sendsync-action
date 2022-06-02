@@ -183,6 +183,8 @@ apply() {
 
 setup_git() {
     echo "===> Setuping up git"
+    echo ${GITHUB_TOKEN} | gh auth login --with-token
+
     git config --global --add safe.directory $GITHUB_WORKSPACE
     git pull --unshallow
     git config --global user.email $committer_email
@@ -225,7 +227,6 @@ create_pr_for_template() {
     git commit -m "(auto) Changes in $template"
     git push origin $branch
 
-    echo ${GITHUB_TOKEN} | gh auth login --with-token
     gh pr create -d --title "(auto) Publish template: $template." --body "Detected changes in template $template. Review this PR to approve."
 
     git checkout master
