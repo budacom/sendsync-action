@@ -209,7 +209,8 @@ create_pr_for_template() {
     local template_path=templates/$template
     local branch=$template
 
-    if ! git branch -r | grep -q $template; then
+
+    if ! git ls-remote --exit-code --heads origin $template; then
         git branch $branch
     fi
     git checkout $branch
