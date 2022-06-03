@@ -143,22 +143,22 @@ parse_command_line() {
 sync() {
     setup_git
 
-    echo "Running in syncronization mode"
+    echo "===> Running in syncronization mode"
     sendsync get template
 
     templates=$(get_changed_templates_on_workdir templates)
 
     for template in $templates; do
-        echo "Stashing $template..."
+        echo "---> Stashing $template..."
         git add -A templates/$template
         git stash push -m $template -- templates/$template
+        echo ""
     done
 
     git stash list | while read line; do
         stashed_template=$(git stash list | grep "stash@{0}" | cut -d' ' -f4)
 
         if [ $dry_run = "false" ]; then
-            echo "Creating PR for $stashed_template..."
             create_pr_for_template $stashed_template
         else
             echo "DRY RUN: would have created PR for ${stashed_template}"
@@ -169,7 +169,7 @@ sync() {
 apply() {
     setup_git
 
-    echo "Running in apply mode"
+    echo "===> Running in apply mode"
     templates=$(get_changed_templates_on_commit templates HEAD~1 $GITHUB_SHA)
 
     for template in ${templates}; do
@@ -182,12 +182,16 @@ apply() {
 }
 
 setup_git() {
+    echo "===> Setting up git"
+    echo ${GITHUB_TOKEN} | gh auth login --with-token
+
     git config --global --add safe.directory $GITHUB_WORKSPACE
     git pull --unshallow
     git config --global user.email $committer_email
     git config --global user.name $committer_name
     git fetch origin
     git merge origin/master
+    echo ""
 }
 
 get_changed_templates_on_workdir() {
@@ -209,8 +213,12 @@ create_pr_for_template() {
     local template_path=templates/$template
     local branch=$template
 
-    if ! git branch -r | grep -q $template; then
+
+    if ! git ls-remote --exit-code --heads origin $template; then
+        echo "---> Creating PR for $template..."
         git branch $branch
+    else
+        echo "---> Updating PR for $template..."
     fi
     git checkout $branch
 
@@ -219,10 +227,10 @@ create_pr_for_template() {
     git commit -m "(auto) Changes in $template"
     git push origin $branch
 
-    echo ${GITHUB_TOKEN} | gh auth login --with-token
     gh pr create -d --title "(auto) Publish template: $template." --body "Detected changes in template $template. Review this PR to approve."
 
     git checkout master
+    echo ""
 }
 
 main "$@"
