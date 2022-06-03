@@ -30,6 +30,9 @@ Usage: $(basename "$0") <options>
 EOF
 }
 
+# Global variable for cache
+labels=""
+
 main() {
     local mode=
     local dry_run=false
@@ -159,7 +162,15 @@ sync() {
         stashed_template=$(git stash list | grep "stash@{0}" | cut -d' ' -f4)
 
         if [ $dry_run = "false" ]; then
-            create_pr_for_template $stashed_template
+
+            branch_exist=$(git ls-remote --exit-code --heads origin $stashed_template &>/dev/null; echo $?;)
+
+            if [ $branch_exist == 0 ]; then
+                update_pr_for_template $stashed_template
+            else
+                create_pr_for_template $stashed_template
+            fi
+
         else
             echo "DRY RUN: would have created PR for ${stashed_template}"
         fi
@@ -213,24 +224,67 @@ create_pr_for_template() {
     local template_path=templates/$template
     local branch=$template
 
+    echo "---> Creating PR for $template..."
 
-    if ! git ls-remote --exit-code --heads origin $template; then
-        echo "---> Creating PR for $template..."
-        git branch $branch
-    else
-        echo "---> Updating PR for $template..."
-    fi
+    git checkout -b $branch
+
+    git stash pop
+    git add $template_path
+
+    git commit -m "feat(template): add template $template"
+    git push origin $branch
+
+    local _template_labels=$(extract_labels_args_from_template $template)
+
+    gh pr create -d --fill \
+        --label "auto" $_template_labels \
+        --body "Detected changes in template $template. Review this PR to approve."
+
+    git checkout master
+    echo ""
+}
+
+update_pr_for_template() {
+    local template=$1
+    local template_path=templates/$template
+    local branch=$template
+
+    echo "---> Updating PR for $template..."
+
     git checkout $branch
 
     git stash pop
     git add $template_path
-    git commit -m "(auto) Changes in $template"
-    git push origin $branch
 
-    gh pr create -d --title "(auto) Publish template: $template." --body "Detected changes in template $template. Review this PR to approve."
+    git commit -m "feat(template): update template $template"
+    git push origin $branch
 
     git checkout master
     echo ""
+}
+
+extract_labels_args_from_template() {
+    local _template=$1
+
+    local _labels=""
+    local _repo_labels=$(get_labels)
+
+    for _label in $_repo_labels; do
+        if [[ $_template =~ $_label ]]; then
+            _labels+="--label $_label "
+        fi
+    done
+
+    echo $_labels
+}
+
+get_labels() {
+    # Use global labels variable to cache
+    if [[ -z "$labels" ]]; then
+        labels=$(gh label list --json name --jq ".[].name")
+    fi
+
+    echo $labels
 }
 
 main "$@"
