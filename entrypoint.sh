@@ -145,6 +145,7 @@ parse_command_line() {
 
 sync() {
     setup_git
+    setup_gh
 
     echo "===> Running in syncronization mode"
     sendsync get template
@@ -203,14 +204,18 @@ apply() {
 
 setup_git() {
     echo "===> Setting up git"
-    echo ${GITHUB_TOKEN} | gh auth login --with-token
-
     git config --global --add safe.directory $GITHUB_WORKSPACE
     git pull --unshallow
     git config --global user.email $committer_email
     git config --global user.name $committer_name
     git fetch origin
     git merge origin/master
+    echo ""
+}
+
+setup_gh() {
+    echo "===> Setting up github cli"
+    echo ${GITHUB_TOKEN} | gh auth login --with-token
     echo ""
 }
 
