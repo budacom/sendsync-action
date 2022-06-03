@@ -30,6 +30,9 @@ Usage: $(basename "$0") <options>
 EOF
 }
 
+# Global variable for cache
+labels=""
+
 main() {
     local mode=
     local dry_run=false
@@ -231,7 +234,10 @@ create_pr_for_template() {
     git commit -m "feat(template): add template $template"
     git push origin $branch
 
-    gh pr create -d --label "auto" --fill \
+    local _template_labels=$(extract_labels_args_from_template $template)
+
+    gh pr create -d --fill \
+        --label "auto" $_template_labels \
         --body "Detected changes in template $template. Review this PR to approve."
 
     git checkout master
@@ -255,6 +261,30 @@ update_pr_for_template() {
 
     git checkout master
     echo ""
+}
+
+extract_labels_args_from_template() {
+    local _template=$1
+
+    local _labels=""
+    local _repo_labels=$(get_labels)
+
+    for _label in $_repo_labels; do
+        if [[ $_template =~ $_label ]]; then
+            _labels+="--label $_label "
+        fi
+    done
+
+    echo $_labels
+}
+
+get_labels() {
+    # Use global labels variable to cache
+    if [[ -z "$labels" ]]; then
+        labels=$(gh label list --json name --jq ".[].name")
+    fi
+
+    echo $labels
 }
 
 main "$@"
