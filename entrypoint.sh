@@ -163,9 +163,9 @@ sync() {
 
         if [ $dry_run = "false" ]; then
 
-            branch_exist=$(git ls-remote --exit-code --heads origin $stashed_template &>/dev/null; echo $?;)
+            pr_exists=$(gh pr view --json number --jq ".number" stashed_template &>/dev/null; echo $?;)
 
-            if [ $branch_exist == 0 ]; then
+            if [ $pr_exists == 0 ]; then
 
                 branch_changes=$(git diff --exit-code origin/$stashed_template stash@{0} &>/dev/null; echo $?;)
 
