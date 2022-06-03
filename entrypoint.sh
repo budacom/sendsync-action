@@ -166,7 +166,16 @@ sync() {
             branch_exist=$(git ls-remote --exit-code --heads origin $stashed_template &>/dev/null; echo $?;)
 
             if [ $branch_exist == 0 ]; then
-                update_pr_for_template $stashed_template
+
+                branch_changes=$(git diff --exit-code origin/$stashed_template stash@{0} &>/dev/null; echo $?;)
+
+                if [[ $branch_changes == 0 ]]; then
+                    echo "---> Skipping $template, no new changes..."
+                    git stash drop
+                    echo ""
+                elif [[ $branch_changes == 1 ]]; then
+                    update_pr_for_template $stashed_template
+                fi
             else
                 create_pr_for_template $stashed_template
             fi
@@ -237,8 +246,9 @@ create_pr_for_template() {
     local _template_labels=$(extract_labels_args_from_template $template)
 
     gh pr create -d --fill \
-        --label "auto" $_template_labels \
-        --body "Detected changes in template $template. Review this PR to approve."
+        --label "auto" $_template_labels
+
+    update_body $template
 
     git checkout master
     echo ""
@@ -258,6 +268,8 @@ update_pr_for_template() {
 
     git commit -m "feat(template): update template $template"
     git push origin $branch
+
+    update_body $template
 
     git checkout master
     echo ""
@@ -285,6 +297,28 @@ get_labels() {
     fi
 
     echo $labels
+}
+
+update_body() {
+    local _template=$1
+    local _template_json=templates/$template/template.json
+
+    thumbnail_url=$(cat $_template_json | jq -r '.Versions[0].thumbnail_url')
+    subject=$(cat $_template_json | jq -r '.Versions[0].Subject')
+
+    _body="
+## $template.
+
+**Subject:** $subject
+
+![](https:$thumbnail_url)
+
+Review this PR to approve.
+Merge to deploy to production.
+    "
+
+    gh pr edit $_template \
+        --body "$_body"
 }
 
 main "$@"

@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-ARG GITHUB_CLI_VERSION=1.14.0
+ARG GITHUB_CLI_VERSION=2.11.3
 FROM golang:1.16 as build
 
 WORKDIR /go/src/github.com/budacom/sendsync
@@ -20,7 +20,7 @@ RUN chmod a+x gh_${GITHUB_CLI_VERSION}_linux_amd64/bin/gh
 
 FROM alpine:latest
 ARG GITHUB_CLI_VERSION
-RUN apk --no-cache add ca-certificates git bash
+RUN apk --no-cache add ca-certificates git bash jq
 
 WORKDIR /root/
 
