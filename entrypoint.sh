@@ -166,7 +166,16 @@ sync() {
             branch_exist=$(git ls-remote --exit-code --heads origin $stashed_template &>/dev/null; echo $?;)
 
             if [ $branch_exist == 0 ]; then
-                update_pr_for_template $stashed_template
+
+                branch_changes=$(git diff --exit-code origin/$stashed_template stash@{0} &>/dev/null; echo $?;)
+
+                if [[ $branch_changes == 0 ]]; then
+                    echo "---> Skipping $template, no new changes..."
+                    git stash drop
+                    echo ""
+                elif [[ $branch_changes == 1 ]]; then
+                    update_pr_for_template $stashed_template
+                fi
             else
                 create_pr_for_template $stashed_template
             fi
