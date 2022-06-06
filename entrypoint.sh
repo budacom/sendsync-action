@@ -164,7 +164,7 @@ sync() {
 
         if [ $dry_run = "false" ]; then
 
-            pr_exists=$(gh pr view --json number --jq ".number" stashed_template &>/dev/null; echo $?;)
+            pr_exists=$(gh pr view --json number --jq ".number" $stashed_template &>/dev/null; echo $?;)
 
             if [ $pr_exists == 0 ]; then
 
