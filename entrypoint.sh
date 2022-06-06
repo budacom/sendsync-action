@@ -315,8 +315,8 @@ update_body() {
     local _template=$1
     local _template_json=templates/$template/template.json
 
-    thumbnail_url=$(cat $_template_json | jq -r '.Versions[0].thumbnail_url')
-    subject=$(cat $_template_json | jq -r '.Versions[0].Subject')
+    thumbnail_url=$(cat $_template_json | jq -r '.versions[0].thumbnail_url')
+    subject=$(cat $_template_json | jq -r '.versions[0].subject')
 
     _body="
 ## $template.
