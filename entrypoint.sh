@@ -268,7 +268,14 @@ update_pr_for_template() {
 
     git checkout $branch
 
-    git stash pop
+    stash_status=$(git stash pop &>/dev/null; echo $?;)
+    git status --porcelain
+
+    if [[ $stash_status == 1 ]]; then
+        git checkout --theirs $template_path
+        git stash drop
+    fi
+
     git add $template_path
 
     git commit -m "feat(template): update template $template"
