@@ -163,24 +163,29 @@ sync() {
         stashed_template=$(git stash list | grep "stash@{0}" | cut -d' ' -f4)
 
         if [ $dry_run = "false" ]; then
+            open_pr_for_branch=$(get_open_pr_by_branch $stashed_template)
 
-            pr_number=$(gh pr view --json number --jq ".number" $stashed_template)
-            pr_exists_for_branch=$(echo $?)
-            pr_for_branch_merged=$(gh api repos/$GITHUB_REPOSITORY/pulls/$pr_number/merge &>/dev/null; echo $?;)
+            if [[ -z $open_pr_for_branch ]]; then
+                ### No pending open PR for the template
 
-            if [ $pr_exists_for_branch == 0 ] && [ $pr_for_branch_merged != 0 ]; then
+                # We create a new pr and branch
+                create_pr_for_template $stashed_template
+            else
+                ### There is a PR open for this template
 
-                branch_changes=$(git diff --exit-code origin/$stashed_template stash@{0} &>/dev/null; echo $?;)
+                # Compares the origin branch with the stashed index for the specific template
+                # looking for changes.
+                branch_changes=$(git diff --exit-code origin/$stashed_template stash@{0} -- templates/$stashed_template &>/dev/null; echo $?;)
 
                 if [[ $branch_changes == 0 ]]; then
+                    # We skip this stash, just dropping it
                     echo "---> Skipping $template, no new changes..."
                     git stash drop
                     echo ""
                 elif [[ $branch_changes == 1 ]]; then
+                    # We update the branch with the new changes
                     update_pr_for_template $stashed_template
                 fi
-            else
-                create_pr_for_template $stashed_template
             fi
 
         else
@@ -302,6 +307,14 @@ extract_labels_args_from_template() {
     done
 
     echo $_labels
+}
+
+get_open_pr_by_branch() {
+    local _branch=$1
+
+    # Returns pr number if there is one open, empty if none
+    open_pr=$(gh api --jq ".[].number" "repos/{owner}/{repo}/pulls?head={owner}:$_branch&state=open")
+    echo -n $open_pr
 }
 
 get_labels() {
