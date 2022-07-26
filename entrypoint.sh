@@ -165,10 +165,10 @@ sync() {
         if [ $dry_run = "false" ]; then
 
             pr_number=$(gh pr view --json number --jq ".number" $stashed_template)
-            pr_exists=$(echo $?)
-            pr_merged=$(gh api repos/{owner}/{repo}/pulls/$pr_number/merge &>/dev/null; echo $?;)
+            pr_exists_for_branch=$(echo $?)
+            pr_for_branch_merged=$(gh api repos/$GITHUB_REPOSITORY/pulls/$pr_number/merge &>/dev/null; echo $?;)
 
-            if [ $pr_exists == 0 ] && [ $pr_merged != 0 ]; then
+            if [ $pr_exists_for_branch == 0 ] && [ $pr_for_branch_merged != 0 ]; then
 
                 branch_changes=$(git diff --exit-code origin/$stashed_template stash@{0} &>/dev/null; echo $?;)
 
