@@ -25,6 +25,7 @@ Usage: $(basename "$0") <options>
     -d, --dry-run            Run the action with dry-run
     --committer-email        The email to use when creating the commits
     --committer-name         The name to use when creating the commits
+    --template-name          Specific template to apply (skips git diff detection)
     --draft-pr               Create the pull request as draft
 
 EOF
@@ -39,6 +40,7 @@ main() {
     local committer_email=
     local committer_name=
     local draft_pr=false
+    local template_name=
 
     parse_command_line $@
 
@@ -106,6 +108,12 @@ parse_command_line() {
                     echo "ERROR: '--committer-name' cannot be empty." >&2
                     show_help
                     exit 1
+                fi
+                ;;
+            --template-name)
+                if [[ -n "${2:-}" ]]; then
+                    template_name="$2"
+                    shift
                 fi
                 ;;
             *)
@@ -198,7 +206,13 @@ apply() {
     setup_git
 
     echo "===> Running in apply mode"
-    templates=$(get_changed_templates_on_commit templates HEAD~1 $GITHUB_SHA)
+
+    if [[ -n "$template_name" ]]; then
+        templates="$template_name"
+        echo "---> Using specified template: $template_name"
+    else
+        templates=$(get_changed_templates_on_commit templates HEAD~1 $GITHUB_SHA)
+    fi
 
     for template in ${templates}; do
         if [ $dry_run = "false" ]; then

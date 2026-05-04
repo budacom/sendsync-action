@@ -14,6 +14,10 @@ inputs:
   committer-name:
     required: false
     description: "The name to use when creating the commits"
+  template-name:
+    required: false
+    description: "Specific template directory name to apply (skips git diff detection)"
+    default: ""
 runs:
   using: 'docker'
   image: 'Dockerfile'
@@ -22,3 +26,4 @@ runs:
     - --mode ${{ inputs.mode }}
     - --committer-email ${{ inputs.committer-email }}
     - --committer-name ${{ inputs.committer-name }}
+    - --template-name ${{ inputs.template-name }}
