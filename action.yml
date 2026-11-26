@@ -18,12 +18,23 @@ inputs:
     required: false
     description: "Specific template directory name to apply (skips git diff detection)"
     default: ""
+  draft-pr:
+    required: false
+    description: "Create template pull requests as draft"
+    default: "true"
 runs:
   using: 'docker'
   image: 'Dockerfile'
   args:
-    - --dry-run ${{ inputs.dry-run }}
-    - --mode ${{ inputs.mode }}
-    - --committer-email ${{ inputs.committer-email }}
-    - --committer-name ${{ inputs.committer-name }}
-    - --template-name ${{ inputs.template-name }}
+    - --dry-run
+    - ${{ inputs.dry-run }}
+    - --mode
+    - ${{ inputs.mode }}
+    - --committer-email
+    - ${{ inputs.committer-email }}
+    - --committer-name
+    - ${{ inputs.committer-name }}
+    - --template-name
+    - ${{ inputs.template-name }}
+    - --draft-pr
+    - ${{ inputs.draft-pr }}

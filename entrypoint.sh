@@ -42,7 +42,7 @@ main() {
     local draft_pr=false
     local template_name=
 
-    parse_command_line $@
+    parse_command_line "$@"
 
     if [[ $mode = "sync" ]]; then
         sync
@@ -50,11 +50,11 @@ main() {
         apply
     fi
 
-    echo $mode
+    echo "$mode"
 }
 
 parse_command_line() {
-    while :; do
+    while (( $# > 0 )); do
         case "${1:-}" in
             -h|--help)
                 show_help
@@ -71,7 +71,7 @@ parse_command_line() {
                 fi
                 ;;
             -m|--mode)
-                if [[ -n "${2:-}" ]]; then
+                if [[ -n "${2:-}" && "${2}" != -* ]]; then
                     mode="$2"
                     shift
                 else
@@ -81,7 +81,7 @@ parse_command_line() {
                 fi
                 ;;
             -d|--dry-run)
-                if [[ -n "${2:-}" ]]; then
+                if [[ -n "${2:-}" && "${2}" != -* ]]; then
                     dry_run="$2"
                     shift
                 else
@@ -91,29 +91,41 @@ parse_command_line() {
                 fi
                 ;;
             --committer-email)
-                if [[ -n "${2:-}" ]]; then
+                if (( $# >= 2 )) && [[ -z "${2:-}" || "${2}" != -* ]]; then
                     committer_email="$2"
                     shift
                 else
-                    echo "ERROR: '--committer-email' cannot be empty." >&2
+                    echo "ERROR: '--committer-email' requires a value." >&2
                     show_help
                     exit 1
                 fi
                 ;;
             --committer-name)
-                if [[ -n "${2:-}" ]]; then
+                if (( $# >= 2 )) && [[ -z "${2:-}" || "${2}" != -* ]]; then
                     committer_name="$2"
                     shift
                 else
-                    echo "ERROR: '--committer-name' cannot be empty." >&2
+                    echo "ERROR: '--committer-name' requires a value." >&2
                     show_help
                     exit 1
                 fi
                 ;;
             --template-name)
-                if [[ -n "${2:-}" ]]; then
+                if (( $# >= 2 )) && [[ -z "${2:-}" || "${2}" != -* ]]; then
                     template_name="$2"
                     shift
+                else
+                    echo "ERROR: '--template-name' requires a value." >&2
+                    show_help
+                    exit 1
+                fi
+                ;;
+            --draft-pr)
+                if (( $# >= 2 )) && [[ -z "${2:-}" || "${2}" != -* ]]; then
+                    draft_pr="${2:-true}"
+                    shift
+                else
+                    draft_pr=true
                 fi
                 ;;
             *)
@@ -131,12 +143,12 @@ parse_command_line() {
     fi
 
     if [[ ! "$mode" =~ ^(sync|apply)$ ]]; then
-        echo "ERROR: '$mode mode is not supported." >&2
+        echo "ERROR: '$mode' mode is not supported." >&2
         show_help
         exit 1
     fi
 
-    if [[ $mode = 'sync' ]]; then
+    if [[ "$mode" = 'sync' ]]; then
         if [[ -z "$committer_name" ]]; then
             echo "ERROR: '--committer-name' is required on sync mode" >&2
             show_help
@@ -162,37 +174,37 @@ sync() {
 
     for template in $templates; do
         echo "---> Stashing $template..."
-        git add -A templates/$template
-        git stash push -m $template -- templates/$template
+        git add -A "templates/$template"
+        git stash push -m "$template" -- "templates/$template"
         echo ""
     done
 
-    git stash list | while read line; do
+    git stash list | while read -r line; do
         stashed_template=$(git stash list | grep "stash@{0}" | cut -d' ' -f4)
 
-        if [ $dry_run = "false" ]; then
-            open_pr_for_branch=$(get_open_pr_by_branch $stashed_template)
+        if [[ "$dry_run" = "false" ]]; then
+            open_pr_for_branch=$(get_open_pr_by_branch "$stashed_template")
 
-            if [[ -z $open_pr_for_branch ]]; then
+            if [[ -z "$open_pr_for_branch" ]]; then
                 ### No pending open PR for the template
 
                 # We create a new pr and branch
-                create_pr_for_template $stashed_template
+                create_pr_for_template "$stashed_template"
             else
                 ### There is a PR open for this template
 
                 # Compares the origin branch with the stashed index for the specific template
                 # looking for changes.
-                branch_changes=$(git diff --exit-code origin/$stashed_template stash@{0} -- templates/$stashed_template &>/dev/null; echo $?;)
+                branch_changes=$(git diff --exit-code "origin/$stashed_template" stash@{0} -- "templates/$stashed_template" &>/dev/null; echo $?;)
 
                 if [[ $branch_changes == 0 ]]; then
                     # We skip this stash, just dropping it
-                    echo "---> Skipping $template, no new changes..."
+                    echo "---> Skipping $stashed_template, no new changes..."
                     git stash drop
                     echo ""
                 elif [[ $branch_changes == 1 ]]; then
                     # We update the branch with the new changes
-                    update_pr_for_template $stashed_template
+                    update_pr_for_template "$stashed_template"
                 fi
             fi
 
@@ -211,12 +223,12 @@ apply() {
         templates="$template_name"
         echo "---> Using specified template: $template_name"
     else
-        templates=$(get_changed_templates_on_commit templates HEAD~1 $GITHUB_SHA)
+        templates=$(get_changed_templates_on_commit templates HEAD~1 "$GITHUB_SHA")
     fi
 
     for template in ${templates}; do
-        if [ $dry_run = "false" ]; then
-            sendsync apply -f templates/${template}/template.json
+        if [[ "$dry_run" = "false" ]]; then
+            sendsync apply -f "templates/${template}/template.json"
         else
             echo "DRY RUN: would have applied ${template}"
         fi
@@ -225,10 +237,14 @@ apply() {
 
 setup_git() {
     echo "===> Setting up git"
-    git config --global --add safe.directory $GITHUB_WORKSPACE
+    git config --global --add safe.directory "$GITHUB_WORKSPACE"
     git pull --unshallow
-    git config --global user.email $committer_email
-    git config --global user.name $committer_name
+    if [[ -n "$committer_email" ]]; then
+        git config --global user.email "$committer_email"
+    fi
+    if [[ -n "$committer_name" ]]; then
+        git config --global user.name "$committer_name"
+    fi
     git fetch origin
     git merge origin/master
     echo ""
@@ -236,14 +252,14 @@ setup_git() {
 
 setup_gh() {
     echo "===> Setting up github cli"
-    echo ${GITHUB_TOKEN} | gh auth login --with-token
+    printf '%s\n' "${GITHUB_TOKEN}" | gh auth login --with-token
     echo ""
 }
 
 get_changed_templates_on_workdir() {
     local templates_path=$1
 
-    git status -s $templates_path | cut -d'/' -f 2 | sort | uniq
+    git status -s "$templates_path" | cut -d'/' -f 2 | sort | uniq
 }
 
 get_changed_templates_on_commit() {
@@ -251,7 +267,7 @@ get_changed_templates_on_commit() {
     local base_commit=$2
     local commit=$3
 
-    git diff --name-only -m $commit $base_commit $templates_path | cut -d'/' -f 2 | sort | uniq
+    git diff --name-only -m "$commit" "$base_commit" "$templates_path" | cut -d'/' -f 2 | sort | uniq
 }
 
 create_pr_for_template() {
@@ -261,20 +277,27 @@ create_pr_for_template() {
 
     echo "---> Creating PR for $template..."
 
-    git checkout -b $branch
+    git checkout -b "$branch"
 
     git stash pop
-    git add $template_path
+    git add "$template_path"
 
     git commit -m "feat(template): add template $template"
-    git push origin $branch
+    git push origin "$branch"
 
-    local _template_labels=$(extract_labels_args_from_template $template)
+    local _template_labels
+    _template_labels=$(extract_labels_args_from_template "$template")
 
-    gh pr create -d --fill \
+    local _pr_flags=()
+    if [[ "$draft_pr" == "true" ]]; then
+        _pr_flags+=(-d)
+    fi
+
+    # shellcheck disable=SC2086
+    gh pr create "${_pr_flags[@]}" --fill \
         --label "auto" $_template_labels
 
-    update_body $template
+    update_body "$template"
 
     git checkout master
     echo ""
@@ -287,22 +310,22 @@ update_pr_for_template() {
 
     echo "---> Updating PR for $template..."
 
-    git checkout $branch
+    git checkout "$branch"
 
     stash_status=$(git stash pop &>/dev/null; echo $?;)
     git status --porcelain
 
     if [[ $stash_status == 1 ]]; then
-        git checkout --theirs $template_path
+        git checkout --theirs "$template_path"
         git stash drop
     fi
 
-    git add $template_path
+    git add "$template_path"
 
     git commit -m "feat(template): update template $template"
-    git push origin $branch
+    git push origin "$branch"
 
-    update_body $template
+    update_body "$template"
 
     git checkout master
     echo ""
@@ -312,7 +335,8 @@ extract_labels_args_from_template() {
     local _template=$1
 
     local _labels=""
-    local _repo_labels=$(get_labels)
+    local _repo_labels
+    _repo_labels=$(get_labels)
 
     for _label in $_repo_labels; do
         if [[ $_template =~ $_label ]]; then
@@ -320,7 +344,7 @@ extract_labels_args_from_template() {
         fi
     done
 
-    echo $_labels
+    echo "$_labels"
 }
 
 get_open_pr_by_branch() {
@@ -328,7 +352,7 @@ get_open_pr_by_branch() {
 
     # Returns pr number if there is one open, empty if none
     open_pr=$(gh api --jq ".[].number" "repos/{owner}/{repo}/pulls?head={owner}:$_branch&state=open")
-    echo -n $open_pr
+    echo -n "$open_pr"
 }
 
 get_labels() {
@@ -337,18 +361,18 @@ get_labels() {
         labels=$(gh label list --json name --jq ".[].name")
     fi
 
-    echo $labels
+    echo "$labels"
 }
 
 update_body() {
     local _template=$1
-    local _template_json=templates/$template/template.json
+    local _template_json="templates/$_template/template.json"
 
-    thumbnail_url=$(cat $_template_json | jq -r '.versions[0].thumbnail_url')
-    subject=$(cat $_template_json | jq -r '.versions[0].subject')
+    thumbnail_url=$(jq -r '.versions[0].thumbnail_url' "$_template_json")
+    subject=$(jq -r '.versions[0].subject' "$_template_json")
 
     _body="
-## $template.
+## $_template.
 
 **Subject:** $subject
 
@@ -358,7 +382,7 @@ Review this PR to approve.
 Merge to deploy to production.
     "
 
-    gh pr edit $_template \
+    gh pr edit "$_template" \
         --body "$_body"
 }
 
